@@ -1,0 +1,764 @@
+openapi: 3.0.0
+
+info:
+  version: "1.0"
+  title: "LBAW Bacefook Web API"
+  description: "Web Resources Specification (A7) for Bacefook"
+
+servers:
+  - url: http://lbaw2133.lbaw.fe.up.pt
+    description: "Production Server"
+
+externalDocs:
+  description: "Find more info here."
+  url: https://git.fe.up.pt/lbaw/lbaw2122/lbaw2133/-/wikis/eap
+
+tags:
+  - name: "M01: Authentication and Individual Profile"
+  - name: "M02: Posts"
+  - name: "M03: Comments"
+  - name: "M04: Groups"
+  - name: "M05: Search"
+  - name: "M06: User Administration and Static Pages"
+
+paths:
+  /login:
+    get:
+      operationID: R101
+      summary: "R101: Sign-in Form"
+      description: "Provide sign-in form. Acess: PUB"
+      tags:
+        - "M01: Authentication and Individual Profile"
+      reponses:
+        "200":
+          description: "Ok. Show Sign-up UI."
+        "302":
+          description: "Redirect if user is already logged-in."
+          headers:
+            Location:
+              schema:
+                type: string
+              examples:
+                302Success:
+                  description: "User Already Authenticated. Redirecting to profile."
+                  value: "/home"
+
+    post:
+      operationId: R102
+      summary: "R102: Sign-in Action"
+      description: "Processes the sign-up form submission. Access: PUB"
+      tags:
+        - "M01: Authentication and Individual Profile"
+
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                emai:
+                  type: string
+                password:
+                  type: string
+              required:
+                - email
+                - password
+      responses:
+        "302":
+          description: "Redirect after processing the sign-in credentials."
+          headers:
+            Location:
+              schema:
+                type: string
+              examples:
+                302Success:
+                  description: "Successful authentication. Redirect to timeline."
+                  value: "/home"
+                302Error:
+                  description: "Failed authentication. Redirect to sign-in form."
+                  value: "/login"
+  /register:
+    get:
+      operationID: R103
+      summary: "R103: Sign-up Form"
+      description: "Provide Sign-up form. Acess: PUB"
+      tags:
+        - "M01: Authentication and Individual Profile"
+      reponses:
+        "200":
+          description: "Ok. Show Sign-up UI"
+    post:
+      operationId: R104
+      summary: "R104: Sign-up Action"
+      description: "Processes the Sign-up form submission. Access: PUB"
+      tags:
+        - "M01: Authentication and Individual Profile"
+
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                first-name:
+                  type: string
+                last-name:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                confirm-password:
+                  type: string
+              required:
+                - first-name
+                - last-name
+                - email
+                - password
+                - confirm-password
+    responses:
+      "302":
+        description: "Redirect after processing the sign-up credentials."
+        headers:
+          Location:
+            schema:
+              type: string
+            examples:
+              302Success:
+                description: "Successful authentication. Redirect to user profile."
+                value: "/home"
+              302Error:
+                description: "Failed authentication. Redirect to register form."
+                value: "/register"
+  /logout:
+    post:
+      operationId: R105
+      summary: "R105: Logout Action"
+      description: "Logout the current authenticated user. Acess: USR"
+      tags:
+        - "M101: Authentication and Individual Profile"
+      responses:
+        "302":
+          description: "Redirect after processing logout"
+          headers:
+            Location:
+              schema:
+                type: string
+              examples:
+                302Sucess:
+                  description: "Successful logout. Redirect to login form."
+                  value: "/login"
+  /profile/{user}:
+    get:
+      operationID: R106
+      summary: "R106: View user profile."
+      description: "Show the individual user profile. Access: PUB"
+      tags:
+        - "M01: Authentication and Individual Profile"
+
+      parameters:
+        - in: path
+          name: user
+          schema:
+            type: integer
+          required: true
+
+      responses:
+        "200":
+          description: "Ok. Show User Profile UI."
+        "404":
+          description: "User not Found"
+        "403":
+          description: "Not authorized"
+    patch:
+      operationID: R107
+      summary: "R107: Update user profile."
+      description: "Updates the individual user profile after editing. Access: OWN, ADM"
+      tags:
+        - "M01: Authentication and Individual Profile"
+    responses:
+      "302":
+        description: "Redirect after processing update"
+        headers:
+          Location:
+            schema:
+              type: string
+            examples:
+              302Sucess:
+                description: "Successful edition. Redirect to user profile."
+                value: "/profile/{user}"
+                parameters:
+                  - in: path
+                    name: user
+                    schema:
+                      type: integer
+                      required: true
+              302Failure:
+                description: "Failed editing profile. Redirect to edit page."
+                value: "/profile/{user}/edit"
+                parameters:
+                  - in: path
+                    name: user
+                    schema:
+                      type: integer
+                      required: true
+
+  /profile/{user}/edit:
+    get:
+      operationID: R108
+      summary: "R108: Edit user profile."
+      description: "Shows the form to edit user profile data. Access: OWN, ADM"
+      tags:
+        - "M01: Authentication and Individual Profile"
+      parameters:
+        - in: path
+          name: user
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: "Ok. Show Profile Edition UI."
+        "404":
+          description: "User not Found."
+        "403":
+          description: "Unauthorized profile edition"
+
+  #M02: Posts
+
+  /post/{id}:
+    get:
+      operationID: R201
+      summary: "R201: View Post and its comments"
+      description: "Shows an individual post and its comments. Access: PUB"
+      tags:
+        - "M02: Posts"
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: "Ok. Show Post."
+        "404":
+          description: "Post not Found"
+        "403":
+          description: "Not authorized"
+    patch:
+      operationID: R202
+      summary: "R202: Update Post"
+      description: "Updates post Access: USR"
+      tags:
+        - "M02: Posts"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                post-visibiliity:
+                  type: boolean
+                post-text:
+                  type: string
+              required:
+                - post-visibiliity
+                - post-text
+      responses:
+        "302":
+        description: "Redirect after processing update"
+        headers:
+          Location:
+            schema:
+              type: string
+            examples:
+              302Sucess:
+                description: "Successful post edition. Redirect to home page."
+                value: "/home"
+              302Failure:
+                description: "Failed post edition. Redirect to home page."
+                value: "/home"
+
+
+  /post/create:
+    post:
+      operationID: R203
+      summary: "R203: Create Post"
+      description: "Creates a new post Access: USR"
+      tags:
+        - "M02: Posts"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                is_public:
+                  type: boolean
+                post_text:
+                  type: string
+                multimediaContent:
+                  type: file
+              required:
+                - is_public
+                - post_text
+      responses:
+        "302":
+        description: "Redirect after processing update"
+        headers:
+          Location:
+            schema:
+              type: string
+            examples:
+              302Sucess:
+                description: "Successful post creation. Redirect to home page."
+                value: "/home"
+              302Failure:
+                description: "Failed post creation. Redirect to home page."
+                value: "/home"
+
+  /post/{post_id}/delete:
+    get:
+      operationID:  R204
+      summary: "R204: Delete Post"
+      description: "Delete post from database. Access: USR"
+      tags:
+        - "M02: Posts"
+      parameters:
+        - in: path
+          name: post_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: "Ok. Post deleted."
+        "404":
+          description: "Post not Found"
+        "403":
+          description: "Not authorized"
+        responses:
+        "302":
+        description: "Redirect after processing update"
+        headers:
+          Location:
+            schema:
+              type: string
+            examples:
+              302Sucess:
+                description: "Successful post deletion. Redirect to home page."
+                value: "/home"
+              302Failure:
+                description: "Failed post deletion. Redirect to home page."
+                value: "/home"               
+
+  /post/{post_id}/edit:
+    get:
+      operationID:  R205
+      summary: "R205: Edit Post"
+      description: "Edition post from database. Access: USR"
+      tags:
+        - "M02: Posts"
+      parameters:
+        - in: path
+          name: post_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: "Ok."
+        "404":
+          description: "Post not Found"
+        "403":
+          description: "Not authorized"
+  
+  /home:
+    get:
+      operationID:  R206
+      summary: "R206: Timeline"
+      description: "View Timeline. Access: PUB"
+      tags:
+        - "M02: Posts"
+      responses:
+        "200":
+          description: "Ok. Show timeline."
+        "404":
+          description: "Not Found"
+        "403":
+          description: "Not authorized"
+
+
+  #M03: Comment
+  /comment:
+    post:
+      operationID: R301
+      summary: "R301: Create a comment"
+      description: "Creates a new comment. Access: USR"
+      tags:
+        - "M03: Comments"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: text
+              required:
+                - content
+      responses:
+        "302":
+          description: "Redirect after creating comment"
+          headers:
+            Location:
+              schema:
+                type: string
+              examples:
+                302Success:
+                  description: "Successfull comment creation. Redirect to parent post"
+                  value: "/post/{id}"
+                  parameters:
+                    - in: path
+                      name: id
+                      schema:
+                        type: integer
+                        required: true
+                302Failure:
+                  description: "Failure creating comment. Redirect to comment creation"
+                  value: "/comment"
+  /comment/{id}:
+    patch:
+      operationID: R302
+      summary: "R302: Edit comment."
+      description: "Edits the comment specified. Access: OWN, ADM"
+      tags:
+        - "M03: Comments"
+    responses:
+      "302":
+        description: "Redirect after processing update"
+        headers:
+          Location:
+            schema:
+              type: string
+            examples:
+              302Sucess:
+                description: "Successful edition. Redirect to parent post."
+                value: "/post/{id}"
+                parameters:
+                  - in: path
+                    name: id
+                    schema:
+                      type: integer
+                      required: true
+              302Failure:
+                description: "Failed editing comment. Redirect to edit page."
+                value: "/comment/{id}/edit"
+                parameters:
+                  - in: path
+                    name: id
+                    schema:
+                      type: integer
+                      required: true
+    delete:
+      operationID: R303
+      summary: "R303: Delete comment."
+      description: "Deletes the specified comment. Access: OWN, ADM"
+      tags:
+        - "M03: Comments"
+
+      responses:
+        "302":
+        description: "Redirect after processing deletion"
+        headers:
+          Location:
+            schema:
+              type: string
+            examples:
+              302Sucess:
+                description: "Successful deletion. Redirect to parent post."
+                value: "/post/{id}"
+                parameters:
+                  - in: path
+                    name: id
+                    schema:
+                      type: integer
+                      required: true
+              302Failure:
+                description: "Failed deleting comment. Redirect to parent post."
+                value: "/post/{id}"
+                parameters:
+                  - in: path
+                    name: id
+                    schema:
+                      type: integer
+                      required: true
+  /comment/{id}/edit:
+    get:
+      operationID: R304
+      summary: "R304: Edit comment."
+      description: "Shows the form to edit comment. Access: OWN, ADM"
+      tags:
+        - "M03: Comments"
+      parameters:
+        - in: path
+          name: user
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: "Ok. Show Comment Edition UI."
+        "404":
+          description: "Comment not Found."
+        "403":
+          description: "Unauthorized comment edition"
+
+  #M04: Groups
+
+  /group/{id}:
+    get:
+      operationID:  R401
+      summary: "R207: Group page"
+      description: "Show group page. Access: USR"
+      tags:
+        - "M04: Groups"
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: "Ok."
+        "404":
+          description: "Post not Found"
+        "403":
+          description: "Not authorized"
+    patch:
+      operationID: R402
+      summary: "R402: Update group page."
+      description: "Updates the groupo page after editing. Access: OWN, ADM"
+      tags:
+        - "M04: Groups"
+    responses:
+      "302":
+        description: "Redirect after processing update"
+        headers:
+          Location:
+            schema:
+              type: string
+            examples:
+              302Sucess:
+                description: "Successful edition. Redirect to group page."
+                value: "/group/{id}"
+                parameters:
+                  - in: path
+                    name: id
+                    schema:
+                      type: integer
+                      required: true
+              302Failure:
+                description: "Failed editing group. Redirect to edit page."
+                value: "/group/{id}/edit"
+                parameters:
+                  - in: path
+                    name: id
+                    schema:
+                      type: integer
+                      required: true
+
+  /group/create:
+    get:
+      operationID:  R403
+      summary: "R403: Group page creation"
+      description: "Show group page creation. Access: USR"
+      tags:
+        - "M04: Groups"
+      responses:
+        "200":
+          description: "Ok."
+        "404":
+          description: "Post not Found"
+        "403":
+          description: "Not authorized"
+    post:
+      post:
+      operationID: R404
+      summary: "R404: Create Group"
+      description: "Creates a new group Access: USR"
+      tags:
+        - "M04: Groups"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                group-name:
+                  type: string
+                is-public:
+                  type: boolean
+              required:
+                - is_public
+                - group-name
+      responses:
+        "302":
+        description: "Redirect after processing update"
+        headers:
+          Location:
+            schema:
+              type: string
+            examples:
+              302Sucess:
+                description: "Successful group creation. Redirect to group page."
+                value: "/group/{id}"
+                parameters:
+                  - in: path
+                    name: id
+                    schema:
+                      type: integer
+                      required: true
+              302Failure:
+                description: "Failed group creation. Redirect to group page creation."
+                value: "/group/create"
+  
+  /group/{id}/edit:
+    get:
+      operationID: R405
+      summary: "R405: Edit group."
+      description: "Shows the form to edit group data. Access: OWN, ADM"
+      tags:
+        - "M04: Groups"
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: "Ok. Show Group Edition UI."
+        "404":
+          description: "Not Found."
+        "403":
+          description: "Unauthorized Group edition"
+
+
+                
+  # M05: Search 
+
+  /search:
+    get:
+      operationID: R501
+      summary: "R501: Get search feature."
+      description: "Shows the Search UI. Access: PUB"
+      tags:
+        - "M05: Search"
+      responses:
+        "200":
+          description: "Ok. Show Search UI."
+
+  /api/search:
+    post:
+      operationID: R502
+      summary: "R502: Processes search "
+      description: "Processes search and retrieves exact match-search. Access: PUB"
+      tags:
+        - "M05: Search"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: text
+              required:
+                - content
+      responses:
+        "302":
+          description: "Redirect after searching"
+          headers:
+            Location:
+              schema:
+                type: string
+              examples:
+                302Success:
+                  description: "Successfull search. Redirect to search view"
+                  value: "/search"
+                302Failure:
+                  description: "Failure searching. Redirect to search view"
+                  value: "/search"
+
+  #M06: User Administration and Static Pages
+  
+  /admin/{id}:
+    get:
+      operationID: R601
+      summary: "R601: View admin tools"
+      description: "Returns the admin dasboard of a certain admin. Access: ADM"
+      tags:
+        - "M06: User Administration and Static Pages."
+      parameters:
+        - in: path
+          name: id
+          description: "ID of the admin"
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: "Ok. Show Management Tools UI."
+
+    patch:
+      operationID: R602
+      summary: "R602: Process Administrator actions."
+      description: "Updates profiles based on the actions given by the administrator, be it block or unblock users, or delete their accounts. Access: ADM"
+      tags:
+        - "M06: User Administration and Static Pages."
+
+      responses:
+        "302":
+          description: "Successfully updated users status. Returns to Management Tools."
+          headers:
+            Location:
+              schema:
+                type: string
+              examples:
+                302Sucess:
+                  description: "Successful Edition. Redirect to Management Tools."
+                  value: "/admin/{id}"
+                302Failure:
+                  description: "Problem with Updating User Status. Redirect to Management Tools."
+                  value: "/admin/{id}"
+  /contact-us:
+    get:
+      operationID: R603
+      summary: "R603. Show Contact Us page."
+      description: "Retrieves a page with relevant contacts to the managers of the company. Access: PUB"
+      tags:
+        - "M06: User Administration and Static Pages."
+      responses:
+        "200":
+          description: "Ok. Show Contact Us Page."
+
+  /our-mission:
+    get:
+      operationID: R604
+      summary: "R604"
+      description: "Retrieve a page with the company's goals and key values, as well as the main features of the website. Access: PUB"
+      tags:
+        - "M06: User Administration and Static Pages."
+      responses:
+        "200":
+          description: "Ok. Show Our Mission Page."
